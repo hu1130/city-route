@@ -40,8 +40,12 @@ function failureHints(message: string) {
     return ["检查 Wi-Fi 或移动网络是否可用", "已填写内容不会清空，联网后点“再试一次”"];
   }
 
-  if (message.includes("2-6") || message.includes("至少")) {
-    return ["保留 2-6 个目的地", "地点太少时先补一个附近想去的地方"];
+  if (message.includes("最多")) {
+    return ["最多保留 6 个目的地", "先删除较远或优先级较低的地点"];
+  }
+
+  if (message.includes("至少")) {
+    return ["至少保留 2 个目的地", "再补一个附近想去的地方"];
   }
 
   if (message.includes("没有匹配") || message.includes("匹配")) {

@@ -85,6 +85,61 @@
     padding: 7px 10px;
   }
 
+  .mobileAppTools {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .mobileAppTools .mobileAccountSlot .accountPanel,
+  .mobileAppTools .mobileAccountSlot .accountPanel.signedIn {
+    width: auto;
+    min-width: 0;
+  }
+
+  .mobileAppTools .mobileAccountSlot .accountTrigger,
+  .mobileAppTools .mobileAccountSlot .accountPanel.signedIn button {
+    min-height: 32px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+
+  .mobileAppTools .mobileAccountSlot .accountPanel.signedIn > div {
+    display: none;
+  }
+
+  .mobileAppTools .mobileAccountSlot .accountDropdown {
+    border: 1px solid rgba(24, 38, 51, 0.12);
+    background: #ffffff;
+    color: #182633;
+    box-shadow: 0 16px 36px rgba(24, 38, 51, 0.18);
+  }
+
+  .mobileAppTools .mobileAccountSlot .authModeSwitch button {
+    border-color: #d8e0e7;
+    background: #f4f7fa;
+    color: #41505d;
+  }
+
+  .mobileAppTools .mobileAccountSlot .authModeSwitch button.active,
+  .mobileAppTools .mobileAccountSlot .accountForm button {
+    border-color: #0b7c70;
+    background: #0b7c70;
+    color: #ffffff;
+  }
+
+  .mobileAppTools .mobileAccountSlot .accountForm input {
+    border-color: #d8e0e7;
+    background: #ffffff;
+    color: #182633;
+  }
+
+  .mobileAppTools .mobileAccountSlot .accountForm input::placeholder {
+    color: #7a8792;
+  }
+
   .mobileHeroComposer {
     display: grid;
     gap: 10px;

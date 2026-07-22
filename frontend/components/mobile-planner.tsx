@@ -71,6 +71,7 @@ const styleOptions = [
 ] as const;
 
 export function MobilePlanner({
+  accountSlot,
   canRetryQuickReplan,
   candidatesReady,
   lastRoutePrompt,
@@ -214,9 +215,12 @@ export function MobilePlanner({
           <span>路</span>
           <strong>此刻路线</strong>
         </a>
-        <span className={`mobileAppStatus ${!isOnline ? "offline" : ""}`}>
-          {!isOnline ? "离线" : loading ? "规划中" : hasResult ? "已生成" : "未规划"}
-        </span>
+        <div className="mobileAppTools">
+          <span className={`mobileAppStatus ${!isOnline ? "offline" : ""}`}>
+            {!isOnline ? "离线" : loading ? "规划中" : hasResult ? "已生成" : "未规划"}
+          </span>
+          <div className="mobileAccountSlot">{accountSlot}</div>
+        </div>
       </header>
 
       {!isOnline && (
@@ -461,6 +465,8 @@ export function MobilePlanner({
                 ? "正在规划..."
                 : destinationNames.length < 2
                   ? "至少填 2 个地点"
+                  : destinationNames.length > 6
+                    ? "最多填 6 个地点"
                   : candidatesReady
                     ? "生成路线"
                     : "开始规划"}

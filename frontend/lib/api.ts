@@ -106,7 +106,7 @@ async function responseErrorMessage(response: Response): Promise<string> {
   const rawText = await response.text();
   const detail = parseErrorDetail(rawText);
   if (detail) {
-    return detail;
+    return localizeApiError(detail);
   }
   if (response.status === 404) {
     return "没有找到对应的数据，请刷新后重试。";
@@ -118,6 +118,17 @@ async function responseErrorMessage(response: Response): Promise<string> {
     return "服务暂时不可用，请稍后重试。";
   }
   return rawText || `请求失败，状态码 ${response.status}`;
+}
+
+function localizeApiError(detail: string): string {
+  const messages: Record<string, string> = {
+    "Email already registered.": "这个邮箱已经注册，请直接登录。",
+    "Email or password is incorrect.": "邮箱或密码错误，请重新输入。",
+    "Invalid or expired login.": "登录状态已失效，请重新登录。",
+    "Login required.": "请先登录后再继续。",
+    "Too many login attempts. Try again later.": "登录尝试过多，请稍后再试。",
+  };
+  return messages[detail] ?? detail;
 }
 
 function parseErrorDetail(rawText: string): string {

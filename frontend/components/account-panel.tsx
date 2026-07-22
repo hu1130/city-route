@@ -21,6 +21,12 @@ export function AccountPanel({
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
 
+  function toggleAccount(nextMode: AccountMode) {
+    setNotice("");
+    setMode(nextMode);
+    setOpen((current) => (current && mode === nextMode ? false : true));
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
@@ -60,21 +66,17 @@ export function AccountPanel({
     <section className={`accountPanel compactAccount ${open ? "open" : ""}`} aria-label="账号">
       <div className="accountActions">
         <button
+          aria-expanded={open && mode === "login"}
           className="accountTrigger loginAction"
-          onClick={() => {
-            setMode("login");
-            setOpen(true);
-          }}
+          onClick={() => toggleAccount("login")}
           type="button"
         >
           登录
         </button>
         <button
+          aria-expanded={open && mode === "register"}
           className="accountTrigger registerAction"
-          onClick={() => {
-            setMode("register");
-            setOpen(true);
-          }}
+          onClick={() => toggleAccount("register")}
           type="button"
         >
           注册

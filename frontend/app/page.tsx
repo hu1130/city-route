@@ -1435,8 +1435,11 @@ function validateForm(form: TripFormValue, names: string[]) {
   if (!form.startLocationName.trim()) {
     throw new Error("请填写当前地点。");
   }
-  if (names.length < 2 || names.length > 6) {
-    throw new Error("请填写 2-6 个想去的地点。");
+  if (names.length < 2) {
+    throw new Error("请至少填写 2 个想去的地点。");
+  }
+  if (names.length > 6) {
+    throw new Error("最多可以填写 6 个想去的地点。");
   }
   if (!form.travelDate.trim()) {
     throw new Error("请选择出发日期。");
