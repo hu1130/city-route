@@ -156,22 +156,37 @@ def destination_subsets(
 
 
 def choose_distinct_candidates(scored: list[tuple[list[TripDestination], dict, float]], budget: int) -> list[tuple]:
-    chosen: list[tuple] = []
-    seen: set[str] = set()
+    recommended = choose_recommended(scored, budget)
+    seen = {candidate_key(recommended)}
 
-    preferred = [
-        scored[0],
-        choose_relaxed(scored, budget),
-        choose_compact(scored),
-    ]
-    for candidate in [*preferred, *scored]:
-        key = ">".join(destination.source_poi_id for destination in candidate[0])
-        if key not in seen:
-            seen.add(key)
-            chosen.append(candidate)
-        if len(chosen) == 3:
-            break
-    return chosen
+    relaxed_pool = [candidate for candidate in scored if candidate_key(candidate) not in seen] or scored
+    relaxed = choose_relaxed(relaxed_pool, budget)
+    seen.add(candidate_key(relaxed))
+
+    compact_pool = [candidate for candidate in scored if candidate[1]["total_minutes"] <= budget] or scored
+    compact = choose_compact(compact_pool)
+    if candidate_key(compact) in seen:
+        compact_stop_count = len(compact[1]["stops"])
+        compact_alternatives = [
+            candidate
+            for candidate in compact_pool
+            if candidate_key(candidate) not in seen and len(candidate[1]["stops"]) == compact_stop_count
+        ]
+        if compact_alternatives:
+            compact = choose_compact(compact_alternatives)
+
+    return [recommended, relaxed, compact]
+
+
+def candidate_key(candidate: tuple[list[TripDestination], dict, float]) -> str:
+    return ">".join(destination.source_poi_id for destination in candidate[0])
+
+
+def choose_recommended(scored: list[tuple], budget: int) -> tuple:
+    candidates = [item for item in scored if item[1]["total_minutes"] <= budget] or scored
+    maximum_stops = max(len(item[1]["stops"]) for item in candidates)
+    maximum_coverage = [item for item in candidates if len(item[1]["stops"]) == maximum_stops]
+    return max(maximum_coverage, key=lambda item: item[2])
 
 
 def choose_relaxed(scored: list[tuple], budget: int) -> tuple:
@@ -382,7 +397,7 @@ def summarize_plan(title: str, order: list[TripDestination]) -> str:
     if "轻松" in title:
         return f"这条路线减少点位和赶路压力，优先保证舒服走完：{names}。"
     if "紧凑" in title:
-        return f"这条路线尽量多覆盖想去地点，停留时间会更压缩：{names}。"
+        return f"这条路线尽量多覆盖想去地点，整体节奏会更紧凑：{names}。"
     return f"综合时间、距离和游玩时段，推荐顺序为：{names}。"
 
 
@@ -392,7 +407,7 @@ def build_decision_notes(trip: TripRecord, order: list[TripDestination], schedul
     if style == "relaxed":
         notes.append("轻松路线：少赶路，优先走得完。")
     elif style == "compact":
-        notes.append("紧凑路线：多覆盖，停留更压缩。")
+        notes.append("紧凑路线：多覆盖，整体节奏更紧凑。")
     else:
         notes.append("按时间、距离、偏好排序。")
 

@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from app.schemas.route import RouteLeg, WeatherSnapshot
 from app.schemas.trip import Location, TripDestination, TripRecord
 from app.services.city_strategy import city_strategy_decision_note, city_strategy_score
+from app.services.route_planner import choose_distinct_candidates
 from app.services.route_scoring import (
     score_crowd_and_risk,
     score_long_optional_moves,
@@ -223,3 +224,100 @@ def test_user_style_remains_primary_over_city_strategy():
     )
     assert "美食玩法优先" in city_strategy_decision_note("北京", "food")
     assert "只作为提醒" in city_strategy_decision_note("北京", "food")
+
+
+def test_route_variants_keep_coverage_semantics_when_preferred_routes_overlap():
+    first = make_destination("first", "historic")
+    second = make_destination("second", "landmark")
+    third = make_destination("third", "museum")
+    two_stop_order = [first, second]
+    alternate_two_stop_order = [second, first]
+    full_order = [first, second, third]
+    alternate_full_order = [third, second, first]
+
+    two_stop_schedule = make_schedule(
+        [
+            make_stop(first, "2026-06-29T15:00:00+08:00", True),
+            make_stop(second, "2026-06-29T16:10:00+08:00", True),
+        ],
+        travel_minutes=25,
+    )
+    alternate_two_stop_schedule = make_schedule(
+        [
+            make_stop(second, "2026-06-29T15:00:00+08:00", True),
+            make_stop(first, "2026-06-29T16:20:00+08:00", True),
+        ],
+        travel_minutes=35,
+    )
+    full_schedule = make_schedule(
+        [
+            make_stop(first, "2026-06-29T15:00:00+08:00", True),
+            make_stop(second, "2026-06-29T16:10:00+08:00", True),
+            make_stop(third, "2026-06-29T17:20:00+08:00", True),
+        ],
+        travel_minutes=55,
+    )
+    alternate_full_schedule = make_schedule(
+        [
+            make_stop(third, "2026-06-29T15:00:00+08:00", True),
+            make_stop(second, "2026-06-29T16:10:00+08:00", True),
+            make_stop(first, "2026-06-29T17:20:00+08:00", True),
+        ],
+        travel_minutes=60,
+    )
+    scored = [
+        (two_stop_order, two_stop_schedule, 110.0),
+        (full_order, full_schedule, 100.0),
+        (alternate_full_order, alternate_full_schedule, 95.0),
+        (alternate_two_stop_order, alternate_two_stop_schedule, 90.0),
+    ]
+
+    recommended, relaxed, compact = choose_distinct_candidates(scored, budget=360)
+
+    assert len(recommended[1]["stops"]) == 3
+    assert len(relaxed[1]["stops"]) == 2
+    assert len(compact[1]["stops"]) == 3
+    assert compact[0] != recommended[0]
+
+
+def test_compact_route_does_not_exceed_budget_when_a_full_route_fits():
+    first = make_destination("first", "historic")
+    second = make_destination("second", "landmark")
+    third = make_destination("third", "museum")
+    feasible_order = [first, second, third]
+    overtime_order = [third, second, first]
+    relaxed_order = [first, second]
+
+    feasible_schedule = make_schedule(
+        [
+            make_stop(first, "2026-06-29T15:00:00+08:00", True),
+            make_stop(second, "2026-06-29T16:30:00+08:00", True),
+            make_stop(third, "2026-06-29T18:00:00+08:00", True),
+        ],
+        travel_minutes=170,
+    )
+    overtime_schedule = make_schedule(
+        [
+            make_stop(third, "2026-06-29T15:00:00+08:00", True),
+            make_stop(second, "2026-06-29T16:30:00+08:00", True),
+            make_stop(first, "2026-06-29T18:00:00+08:00", True),
+        ],
+        travel_minutes=181,
+    )
+    relaxed_schedule = make_schedule(
+        [
+            make_stop(first, "2026-06-29T15:00:00+08:00", True),
+            make_stop(second, "2026-06-29T16:30:00+08:00", True),
+        ],
+        travel_minutes=80,
+    )
+    scored = [
+        (overtime_order, overtime_schedule, 120.0),
+        (feasible_order, feasible_schedule, 100.0),
+        (relaxed_order, relaxed_schedule, 90.0),
+    ]
+
+    _, _, compact = choose_distinct_candidates(scored, budget=360)
+
+    assert len(compact[1]["stops"]) == 3
+    assert compact[1]["total_minutes"] <= 360
