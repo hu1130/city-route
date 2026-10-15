@@ -48,6 +48,16 @@ PACES = {
 }
 
 
+class InsufficientTripTimeError(ValueError):
+    def __init__(self, budget_minutes: int, required_minutes: int) -> None:
+        self.budget_minutes = budget_minutes
+        self.required_minutes = required_minutes
+        super().__init__(
+            f"可用时间只有 {budget_minutes} 分钟，至少需要约 {required_minutes} 分钟。"
+            "请延长结束时间、缩短停留时间或减少地点。"
+        )
+
+
 def apply_traveler_style_to_pace(pace: PaceProfile, traveler_style: str) -> PaceProfile:
     style = normalize_traveler_style(traveler_style)
     multipliers = {
@@ -94,6 +104,8 @@ def generate_route_plans(trip: TripRecord, fixed_order: bool = False) -> list[Ro
     if fixed_order:
         order = list(trip.destinations)
         schedule = build_schedule(trip, order, transport, pace, directions)
+        if schedule["total_minutes"] > budget:
+            raise InsufficientTripTimeError(budget, schedule["total_minutes"])
         weather = weather_advisor.build(trip, schedule)
         score = score_route_candidate(schedule, trip, budget, weather)
         title, style = titles[0]
@@ -107,19 +119,15 @@ def generate_route_plans(trip: TripRecord, fixed_order: bool = False) -> list[Ro
             schedule = build_schedule(trip, order, transport, pace, directions)
             weather = weather_advisor.build(trip, schedule)
             score = score_route_candidate(schedule, trip, budget, weather)
-            if schedule["total_minutes"] <= budget * 1.12:
-                scored.append((order, schedule, score))
-
-    if not scored:
-        for order_tuple in permutations(trip.destinations):
-            order = list(order_tuple)
-            schedule = build_schedule(trip, order, transport, pace, directions)
-            weather = weather_advisor.build(trip, schedule)
-            score = score_route_candidate(schedule, trip, budget, weather)
             scored.append((order, schedule, score))
 
-    scored.sort(key=lambda item: item[2], reverse=True)
-    selected = choose_distinct_candidates(scored, budget)
+    feasible = [candidate for candidate in scored if candidate[1]["total_minutes"] <= budget]
+    if not feasible:
+        shortest_minutes = min(candidate[1]["total_minutes"] for candidate in scored)
+        raise InsufficientTripTimeError(budget, shortest_minutes)
+
+    feasible.sort(key=lambda item: item[2], reverse=True)
+    selected = choose_distinct_candidates(feasible, budget)
     plans: list[RoutePlan] = []
     for index, candidate in enumerate(selected[:3]):
         title, style = titles[index]

@@ -14,7 +14,7 @@ from app.schemas.trip import (
     TripHistoryResponse,
     TripRecord,
 )
-from app.services.route_planner import generate_route_plans
+from app.services.route_planner import InsufficientTripTimeError, generate_route_plans
 from app.storage.memory_store import (
     create_trip,
     count_trips,
@@ -104,7 +104,10 @@ def generate_routes_endpoint(
     if trip is None:
         raise HTTPException(status_code=404, detail="Trip not found.")
 
-    plans = generate_route_plans(trip, fixed_order=payload.fixed_order if payload else False)
+    try:
+        plans = generate_route_plans(trip, fixed_order=payload.fixed_order if payload else False)
+    except InsufficientTripTimeError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
     return RoutePlansResponse(plans=plans)
 
 

@@ -220,6 +220,18 @@ def test_create_trip_accepts_two_destinations(client):
     assert all(len(plan["stops"]) == 2 for plan in plans)
 
 
+def test_generate_routes_rejects_when_two_destinations_do_not_fit(client):
+    payload = trip_payload(["武康路", "外滩"])
+    payload["endTime"] = "2026-06-29T15:30:00+08:00"
+    trip_id = create_trip(client, payload)
+
+    response = client.post(f"/api/trips/{trip_id}/routes", json={})
+
+    assert response.status_code == 422
+    assert "可用时间只有 30 分钟" in response.json()["detail"]
+    assert "延长结束时间" in response.json()["detail"]
+
+
 def test_create_trip_rejects_too_many_destinations(client):
     payload = trip_payload(["武康路", "外滩", "豫园", "新天地", "上海博物馆", "南京路", "田子坊"])
     response = client.post("/api/trips", json=payload)
@@ -258,6 +270,7 @@ def test_generate_routes(client):
     assert first["weather"]["alerts"]
     assert first["totalMinutes"] == first["travelMinutes"] + first["visitMinutes"]
     assert len(first["stops"]) == len(first["legs"])
+    assert all(plan["estimatedEndTime"] <= "2026-06-29T21:00:00+08:00" for plan in plans)
     assert first["stops"][0]["practicalInfo"]["openingHours"] == "需官方确认"
 
     for stop in first["stops"]:
