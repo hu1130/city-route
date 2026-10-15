@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 790">
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-58 118 C-2 74 48 78 77 119 C111 167 159 170 199 127 C241 82 292 80 330 119 C365 155 407 148 444 112" stroke="#7b82c5" stroke-opacity=".17" stroke-width="1.8"/>
+    <path d="M-67 155 C-5 107 52 111 89 155 C127 200 180 202 220 159 C262 114 307 111 345 147 C380 180 417 176 451 143" stroke="#7b82c5" stroke-opacity=".12" stroke-width="1.5"/>
+    <path d="M-72 191 C-11 148 48 150 94 194 C135 234 188 237 233 197 C278 157 322 153 363 187 C400 218 431 214 459 190" stroke="#7b82c5" stroke-opacity=".09" stroke-width="1.3"/>
+    <path d="M-32 63 C16 39 53 48 74 75 C98 106 128 110 157 84 C189 56 221 55 250 78" stroke="#df9f89" stroke-opacity=".12" stroke-width="1.5"/>
+
+    <path d="M112 640 C158 593 210 588 248 621 C286 653 328 650 365 611 C399 576 433 571 466 591" stroke="#4ba899" stroke-opacity=".17" stroke-width="1.8"/>
+    <path d="M100 680 C150 631 207 628 253 663 C295 695 341 692 380 653 C414 619 448 615 480 633" stroke="#4ba899" stroke-opacity=".12" stroke-width="1.5"/>
+    <path d="M88 722 C143 672 206 669 259 704 C306 736 354 733 397 695 C432 664 465 660 495 676" stroke="#4ba899" stroke-opacity=".09" stroke-width="1.3"/>
+    <path d="M-68 624 C-15 594 31 600 61 632 C92 665 127 670 161 649" stroke="#df9f89" stroke-opacity=".11" stroke-width="1.5"/>
+  </g>
+</svg>

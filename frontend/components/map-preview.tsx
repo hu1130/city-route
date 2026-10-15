@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { loadAmap } from "../lib/amap-loader";
+import { ChinaSearchLoader, mapLoadingStatus } from "./china-search-loader";
 
 const cityCenters: Record<string, [number, number]> = {
   上海: [121.4737, 31.2304],
@@ -25,11 +26,15 @@ export type MapPreviewFocusPoint = {
 
 export function MapPreview({
   city,
+  destinationNames = [],
   focusPoint,
+  locating = false,
   resizeSignal,
 }: {
   city: string;
+  destinationNames?: string[];
   focusPoint?: MapPreviewFocusPoint | null;
+  locating?: boolean;
   resizeSignal?: string;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -45,7 +50,7 @@ export function MapPreview({
     return cityCenters[city.trim()] ?? countryCenter;
   }, [city, focusPoint]);
   const label = focusPoint?.name ? `起点：${focusPoint.name}` : city || "当前城市";
-  const loadingTarget = focusPoint?.name || city.trim() || "城市地图";
+  const loadingText = mapLoadingStatus({ city, destinationNames, locating });
 
   useEffect(() => {
     if (!amapKey || !containerRef.current) {
@@ -132,7 +137,7 @@ export function MapPreview({
   return (
     <>
       <div className="homeMapCanvas" ref={containerRef} />
-      {status === "loading" && <MapLoadingScene target={loadingTarget} />}
+      {status === "loading" && <ChinaSearchLoader status={loadingText} />}
       {status === "fallback" && (
         <div className="homeMapFallback">
           <div className="homeMapFallbackCard">
@@ -145,38 +150,6 @@ export function MapPreview({
         </div>
       )}
     </>
-  );
-}
-
-function MapLoadingScene({ target }: { target: string }) {
-  return (
-    <div className="mapLoadingScene" role="status" aria-live="polite">
-      <div className="mapLoadingGrid" aria-hidden="true" />
-      <span className="mapLoadingRoad roadOne" aria-hidden="true" />
-      <span className="mapLoadingRoad roadTwo" aria-hidden="true" />
-      <span className="mapLoadingRoad roadThree" aria-hidden="true" />
-      <span className="mapLoadingRoute" aria-hidden="true" />
-      <span className="mapLoadingPin start" aria-hidden="true">
-        起
-      </span>
-      <span className="mapLoadingPin stop" aria-hidden="true">
-        1
-      </span>
-      <span className="mapLoadingLens" aria-hidden="true">
-        <i />
-      </span>
-      <div className="mapLoadingCopy">
-        <strong>正在寻找 {target}</strong>
-        <span>
-          定位道路与周边地点
-          <i className="mapLoadingDots" aria-hidden="true">
-            <b />
-            <b />
-            <b />
-          </i>
-        </span>
-      </div>
-    </div>
   );
 }
 

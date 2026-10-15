@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import type { TripFormValue } from "../lib/types";
+import { tripFormActionLabel, tripFormValidationMessage } from "../lib/trip-form-validation";
 
 const naturalPromptExample = "我在上海，下午3点从人民广场出发，想去武康路、外滩、豫园、新天地，晚上9点前结束";
 
@@ -48,6 +49,7 @@ export function TripForm({
 }) {
   const [naturalText, setNaturalText] = useState("");
   const destinationNames = parseDestinationNames(value.destinationsText);
+  const validationMessage = tripFormValidationMessage(value, destinationNames);
 
   function update<K extends keyof TripFormValue>(key: K, nextValue: TripFormValue[K]) {
     onChange({ ...value, [key]: nextValue });
@@ -295,9 +297,9 @@ export function TripForm({
         </div>
       </details>
 
-      <button className="primary" disabled={loading} type="submit">
+      <button className="primary" disabled={loading || Boolean(validationMessage)} type="submit">
         {loading && <span className="buttonSpinner" aria-hidden="true" />}
-        {loading ? "正在规划..." : submitLabel ?? "生成路线"}
+        {loading ? "正在规划..." : tripFormActionLabel(validationMessage) ?? submitLabel ?? "生成路线"}
       </button>
     </form>
   );

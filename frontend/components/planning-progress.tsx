@@ -1,3 +1,5 @@
+import { ChinaSearchLoader, mapLoadingStatus } from "./china-search-loader";
+
 export type PlanningStage = "searching" | "routing" | "explaining";
 
 const steps: { key: PlanningStage; label: string; detail: string }[] = [
@@ -25,27 +27,26 @@ export function PlanningProgress({
     0,
     steps.findIndex((step) => step.key === stage),
   );
-  const visibleStops = destinationNames.slice(0, 4);
+  const status = planningStatus({ actionLabel, city, destinationNames, stage, startName });
 
   return (
-    <section className={`planningProgress ${variant}`} aria-label="路线规划进度" aria-live="polite">
-      <div className="planningProgressMap" aria-hidden="true">
-        <div className="planningMapGrid" />
-        <span className="planningMapPin start">起</span>
-        {visibleStops.map((name, index) => (
-          <span className={`planningMapPin stop stop${index + 1}`} key={`${name}-${index}`}>
-            {index + 1}
-          </span>
-        ))}
-        <span className="planningRouteTrace" />
-        <span className="planningMagnifier">
-          <i />
-        </span>
+    <section
+      className={`planningProgress ${variant}`}
+      aria-label="路线规划进度"
+      aria-live={variant === "desktop" ? "polite" : undefined}
+    >
+      <div className="planningProgressMap">
+        <ChinaSearchLoader
+          announce={variant === "mobile"}
+          compact
+          showStatus={variant === "mobile"}
+          status={status}
+        />
       </div>
 
       <div className="planningProgressCopy">
         <span>{city || "当前城市"} · {startName || "出发点"}</span>
-        <strong>{actionLabel ? `正在${actionLabel}` : steps[activeIndex]?.label ?? "正在规划"}</strong>
+        <strong>{status}</strong>
         <p>{actionLabel ? "原路线先保留，完成后自动换成新路线" : steps[activeIndex]?.detail ?? "马上给你路线"}</p>
       </div>
 
@@ -65,4 +66,29 @@ export function PlanningProgress({
       </ol>
     </section>
   );
+}
+
+function planningStatus({
+  actionLabel,
+  city,
+  destinationNames,
+  stage,
+  startName,
+}: {
+  actionLabel?: string | null;
+  city: string;
+  destinationNames: string[];
+  stage: PlanningStage;
+  startName: string;
+}) {
+  if (actionLabel) {
+    return `正在${actionLabel}`;
+  }
+  if (stage === "routing") {
+    return `正在比较${destinationNames.length || "各"}个地点的路线`;
+  }
+  if (stage === "explaining") {
+    return `正在整理${city.trim() || "这座城市"}的出发建议`;
+  }
+  return mapLoadingStatus({ city, destinationNames, locating: !startName.trim() });
 }

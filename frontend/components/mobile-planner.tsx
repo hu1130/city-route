@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode, TouchEvent } from "react";
 import type { RoutePlan, TripFormValue } from "../lib/types";
+import { tripFormActionLabel, tripFormValidationMessage } from "../lib/trip-form-validation";
 import { routePlanTone } from "../lib/route-plan-labels";
 import { MapPreview, type MapPreviewFocusPoint } from "./map-preview";
 import { PlanningFailure } from "./planning-failure";
@@ -101,6 +102,7 @@ export function MobilePlanner({
 }: MobilePlannerProps) {
   const [sheetCollapsed, setSheetCollapsed] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
+  const plannerShellRef = useRef<HTMLElement>(null);
   const controlSheetRef = useRef<HTMLElement>(null);
   const sheetTouchStartYRef = useRef<number | null>(null);
   const sheetSwipeRef = useRef(false);
@@ -115,13 +117,8 @@ export function MobilePlanner({
   const hasResult = plans.length > 0 && Boolean(selectedPlan);
   const sheetSignal = `${sheetCollapsed ? "collapsed" : "expanded"}-${selectedPlan?.planId ?? "draft"}`;
   const nextStopName = selectedPlan?.stops[0]?.name ?? visibleStops[0] ?? "";
-  const canSubmit =
-    isOnline &&
-    !loading &&
-    value.city.trim().length > 0 &&
-    value.startLocationName.trim().length > 0 &&
-    destinationNames.length >= 2 &&
-    destinationNames.length <= 6;
+  const validationMessage = tripFormValidationMessage(value, destinationNames);
+  const canSubmit = isOnline && !loading && !validationMessage;
 
   useEffect(() => {
     const syncConnection = () => setIsOnline(navigator.onLine);
@@ -145,6 +142,12 @@ export function MobilePlanner({
       controlSheetRef.current?.scrollTo({ top: 0, left: 0 });
     }
   }, [sheetCollapsed]);
+
+  useEffect(() => {
+    if (!sheetCollapsed && hasResult) {
+      plannerShellRef.current?.scrollTo({ top: 0, left: 0 });
+    }
+  }, [hasResult, sheetCollapsed]);
 
   function update<K extends keyof TripFormValue>(key: K, nextValue: TripFormValue[K]) {
     onChange({ ...value, [key]: nextValue });
@@ -209,6 +212,7 @@ export function MobilePlanner({
     <section
       className={`mobilePlannerShell ${sheetCollapsed ? "sheetCollapsed" : "sheetExpanded"} ${hasResult ? "hasResult" : "noResult"}`}
       aria-label="手机路线规划"
+      ref={plannerShellRef}
     >
       <header className="mobileAppBar">
         <a className="mobileAppBrand" href="#mobile-plan">
@@ -240,7 +244,13 @@ export function MobilePlanner({
             variant="stage"
           />
         ) : (
-          <MapPreview city={value.city} focusPoint={previewMapPoint} resizeSignal={sheetSignal} />
+          <MapPreview
+            city={value.city}
+            destinationNames={destinationNames}
+            focusPoint={previewMapPoint}
+            locating={locating}
+            resizeSignal={sheetSignal}
+          />
         )}
         <div className="mobileMapStageOverlay" aria-hidden="true">
           <div>
@@ -463,15 +473,9 @@ export function MobilePlanner({
               ? "等待网络恢复"
               : loading
                 ? "正在规划..."
-                : destinationNames.length < 2
-                  ? "至少填 2 个地点"
-                  : destinationNames.length > 6
-                    ? "最多填 6 个地点"
-                  : candidatesReady
-                    ? "生成路线"
-                    : "开始规划"}
+                : tripFormActionLabel(validationMessage) ?? (candidatesReady ? "生成路线" : "开始规划")}
           </button>
-          {!hasResult && lastRoutePrompt && (
+          {!loading && !hasResult && lastRoutePrompt && (
             <ContinueRoutePrompt
               prompt={lastRoutePrompt}
               onContinue={onContinueLastRoute}

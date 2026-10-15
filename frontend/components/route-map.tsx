@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { RoutePlan } from "../lib/types";
 import { loadAmap } from "../lib/amap-loader";
 
@@ -31,7 +31,10 @@ export function RouteMap({
   const [mapError, setMapError] = useState("");
   const [retryToken, setRetryToken] = useState(0);
   const amapKey = process.env.NEXT_PUBLIC_AMAP_JS_KEY?.trim();
-  const points = useMemo(() => uniquePoints(startPoint ? [startPoint, ...stops] : stops), [startPoint, stops]);
+  const points = uniquePoints(startPoint ? [startPoint, ...stops] : stops);
+  const pointsSignature = points
+    .map((point) => `${point.id}:${point.name}:${point.lat.toFixed(6)}:${point.lng.toFixed(6)}`)
+    .join("|");
 
   useEffect(() => {
     if (!amapKey || points.length === 0 || !containerRef.current) {
@@ -56,7 +59,7 @@ export function RouteMap({
         mapRef.current?.destroy?.();
         const map = new AMap.Map(containerRef.current, {
           animateEnable: false,
-          resizeEnable: false,
+          resizeEnable: true,
           viewMode: "2D",
           zoom: 12,
         });
@@ -125,14 +128,16 @@ export function RouteMap({
       mapRef.current?.destroy?.();
       mapRef.current = null;
     };
-  }, [amapKey, points, retryToken, variant]);
+  }, [amapKey, pointsSignature, retryToken, variant]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      mapRef.current?.resize?.();
-      fitMapRef.current?.();
-    }, 260);
-    return () => window.clearTimeout(timer);
+    const timers = [80, 320].map((delay) =>
+      window.setTimeout(() => {
+        mapRef.current?.resize?.();
+        fitMapRef.current?.();
+      }, delay),
+    );
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
   }, [resizeSignal]);
 
   if (points.length === 0) {

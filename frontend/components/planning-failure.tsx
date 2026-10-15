@@ -10,6 +10,7 @@ export function PlanningFailure({
   onRetry: () => void;
 }) {
   const hints = failureHints(message);
+  const editLabel = isTimeFailure(message) ? "调整时间或地点" : "改地点";
 
   return (
     <section className={`planningFailure ${compact ? "compact" : ""}`} role="status" aria-live="polite">
@@ -28,7 +29,7 @@ export function PlanningFailure({
           再试一次
         </button>
         <button onClick={onEdit} type="button">
-          改地点
+          {editLabel}
         </button>
       </div>
     </section>
@@ -44,6 +45,10 @@ function failureHints(message: string) {
     return ["最多保留 6 个目的地", "先删除较远或优先级较低的地点"];
   }
 
+  if (isTimeFailure(message)) {
+    return ["延长结束时间", "缩短单个地点的停留时间", "减少一个距离较远的地点"];
+  }
+
   if (message.includes("至少")) {
     return ["至少保留 2 个目的地", "再补一个附近想去的地方"];
   }
@@ -52,13 +57,13 @@ function failureHints(message: string) {
     return ["把地点写具体一点，例如加上商圈、区名或完整店名", "同名地点很多时优先选地址最接近的那个"];
   }
 
-  if (message.includes("时间") || message.includes("太晚") || message.includes("不够")) {
-    return ["延长结束时间，或删掉一个最绕的地点", "跨区太多时可以改成打车优先"];
-  }
-
   if (message.includes("起点")) {
     return ["起点用酒店、地铁站、商场这类明确位置", "定位不准时直接手动改起点"];
   }
 
   return ["检查城市、起点和地点名是否具体", "如果地点分散，先减少一个点或延长时间"];
+}
+
+function isTimeFailure(message: string) {
+  return message.includes("时间") || message.includes("分钟") || message.includes("太晚") || message.includes("不够");
 }

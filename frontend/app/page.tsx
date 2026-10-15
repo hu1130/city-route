@@ -36,6 +36,7 @@ import {
   searchPoi,
 } from "../lib/api";
 import { clearAuthSession, getAuthToken, getStoredAuthUser } from "../lib/auth";
+import { tripFormValidationMessage } from "../lib/trip-form-validation";
 import type {
   AuthSession,
   AuthUser,
@@ -108,6 +109,7 @@ export default function HomePage() {
     () => plans.find((plan) => plan.planId === selectedPlanId) ?? plans[0],
     [plans, selectedPlanId],
   );
+  const mapStops = useMemo(() => orderedMapStops(pois, selectedPlan), [pois, selectedPlan]);
   const previewMapPoint = useMemo(
     () =>
       startPoint ??
@@ -823,7 +825,7 @@ export default function HomePage() {
         loading={loading}
         locating={locating}
         locationAccuracyMeters={detectedStartLocation ? locationAccuracyMeters : null}
-        mapStops={orderedMapStops(pois, selectedPlan)}
+        mapStops={mapStops}
         failureMessage={failureMessage}
         lastRoutePrompt={lastRoutePrompt}
         message={message}
@@ -848,7 +850,12 @@ export default function HomePage() {
 
       <section className="mapWorkbench" id="planner" aria-label="规划此刻路线">
         <div className="workbenchMapLayer" aria-hidden="true">
-          <MapPreview city={form.city} focusPoint={previewMapPoint} />
+          <MapPreview
+            city={form.city}
+            destinationNames={names}
+            focusPoint={previewMapPoint}
+            locating={locating}
+          />
         </div>
 
         <header className="workbenchTopbar">
@@ -1037,7 +1044,7 @@ export default function HomePage() {
           )}
 
           {selectedPlan && (
-            <RouteMap selectedPlan={selectedPlan} startPoint={startPoint} stops={orderedMapStops(pois, selectedPlan)} />
+            <RouteMap selectedPlan={selectedPlan} startPoint={startPoint} stops={mapStops} />
           )}
 
           {selectedPlan && (
@@ -1429,32 +1436,10 @@ function formatLastRouteSavedAt(value: string) {
 }
 
 function validateForm(form: TripFormValue, names: string[]) {
-  if (!form.city.trim()) {
-    throw new Error("请填写城市。");
+  const validationMessage = tripFormValidationMessage(form, names);
+  if (validationMessage) {
+    throw new Error(validationMessage);
   }
-  if (!form.startLocationName.trim()) {
-    throw new Error("请填写当前地点。");
-  }
-  if (names.length < 2) {
-    throw new Error("请至少填写 2 个想去的地点。");
-  }
-  if (names.length > 6) {
-    throw new Error("最多可以填写 6 个想去的地点。");
-  }
-  if (!form.travelDate.trim()) {
-    throw new Error("请选择出发日期。");
-  }
-  if (form.travelDate < formatDateInput(new Date())) {
-    throw new Error("出发日期不能早于今天。");
-  }
-  if (toMinutes(form.endTime) <= toMinutes(form.startTime)) {
-    throw new Error("结束时间需要晚于开始时间。");
-  }
-}
-
-function toMinutes(value: string): number {
-  const [hours, minutes] = value.split(":").map(Number);
-  return hours * 60 + minutes;
 }
 
 function travelerStyleLabel(value: TripFormValue["travelerStyle"]) {

@@ -221,8 +221,8 @@ function CandidateGroupSection({
   const alternativeCandidates = group.candidates.filter(
     (candidate) => candidate.sourcePoiId !== primaryCandidate?.sourcePoiId,
   );
-  const visibleAlternatives = alternativeCandidates.slice(0, 2);
-  const hiddenAlternatives = alternativeCandidates.slice(2);
+  const visibleAlternatives = alternativeCandidates.slice(0, 1);
+  const hiddenAlternatives = alternativeCandidates.slice(1);
 
   return (
     <section className="candidateGroup">
@@ -259,7 +259,7 @@ function CandidateGroupSection({
           <div className="candidateAlternativeBlock">
             <div className="candidateAlternativeHead">
               <span>不是这个？</span>
-              <strong>看 1-2 个最像的备选</strong>
+              <strong>看最像的备选</strong>
             </div>
             <div className="candidateOptions">
               {visibleAlternatives.map((candidate) => (
